@@ -34,28 +34,32 @@ int main() {
     // string fileText = readText(filename);
     string line;
     ifstream file(filename);
-
+    vector<string> words;
+    string word;
     while (getline(file, line)) {
         // cout << line << endl;
-        vector<string> words;
-        string word;
         stringstream sstream(line);
             while (getline(sstream, word, ' ')) {
-                word = regex_replace(word, std::regex("[,:]"), "");
+                word = regex_replace(word, std::regex("[,]"), "");
                 if (!word.empty()) {
                     words.push_back(word);
-
-
-                    
-                    cout << word << endl;
-
-
-                    
+                    // cout << words.back() << " : " << &words.back() << endl;
                 }
             }
     }
 
+    for (int i = 0; i < int(words.size()); i++) {
+        cout << words[i] << " : " << &words[i] << endl;
+    }
 
+    int main_pointer;
+    for (int i = 0; i < int(words.size()); i++) {
+        if (words[i] == "main:") {
+            main_pointer = i;
+            break;
+        }
+    }
+    cout << main_pointer << endl;
 
     return 0;
 }
