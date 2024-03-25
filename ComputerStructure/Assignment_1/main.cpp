@@ -102,7 +102,8 @@ int main() {
 
     // exit(0);
 
-    map<string, const string*> label_map;
+    map<string, int> label_index_map_data;
+    map<string, int> label_index_map_text;
     vector<string> data_seg;
     vector<string> text_seg;
     bool in_text = false;
@@ -149,38 +150,43 @@ int main() {
             if (!in_text) {
                 const string& last_element = data_seg.back();
                 // cout << last_element << " : " << &last_element << endl;
-                label_map[words[label_index]] = &last_element;
+                label_index_map_data[words[label_index]] = data_seg.size();
+                cout << data_seg[data_seg.size() - 1] << endl;
             } else {
                 const string& last_element = text_seg.back();
                 // cout << last_element << " : " << &last_element << endl;
-                label_map[words[label_index]] = &last_element;
+                label_index_map_text[words[label_index]] = text_seg.size() - 1;
+                cout << text_seg[text_seg.size() - 1] << endl;
             }
             is_label = false;
         }
     }
 
-    // cout << "======================================" << endl;
-    // // label_map 출력
-    // for (const auto& pair : label_map) {
-    //     cout << pair.first << " : " << pair.second << endl;
-    // }
+    map<string, const string*> label_map;
+
+
+    cout << "======================================" << endl;
+    // label_map 출력
+    for (const auto& pair : label_map) {
+        cout << pair.first << " : " << pair.second << endl;
+    }
     // cout << "======================================" << endl;
     // // data_seg 출력
     // for (size_t i = 0;i < data_seg.size();i++) {
     //     cout << data_seg[i] << " : " << &(data_seg[i])<< endl;
     // }
-    // // text_seg 출력
+    // text_seg 출력
     // cout << "======================================" << endl;
     // for (size_t i = 0;i < text_seg.size();i++) {
     //     cout << text_seg[i] << " : " << &(text_seg[i]) << " : " << *(&text_seg[i]) << endl;
     // }
 
-    for (int i = 0; i < int(text_seg.size()); i++) {
-        if (is_instruction(text_seg[i])) {
-            // cout << text_seg[i] << " : " << &text_seg[i] << endl;
-            instructions(text_seg[i]);
-        }
-    }
+    // for (int i = 0; i < int(text_seg.size()); i++) {
+    //     if (is_instruction(text_seg[i])) {
+    //         // cout << text_seg[i] << " : " << &text_seg[i] << endl;
+    //         instructions(text_seg[i]);
+    //     }
+    // }
     
 
     return 0;
