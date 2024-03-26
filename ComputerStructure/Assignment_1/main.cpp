@@ -21,15 +21,14 @@ bool is_instruction(const string &word) {
     return instructions.count(word) > 0;
 }
 
-void instructions(const string& inst, map<string, int> new_label_map, int counter);
-
+void instructions(const string& inst, map<string, int> new_label_map, int counter, ofstream& write_file);
 
 int main(int argc, char* argv[]) {
     string filepath = "sample/";
     string filename = argv[1];
     filepath = filepath + filename;
     string line;
-    ifstream file(argv[1]);
+    ifstream file(filepath);
 
 
 
@@ -174,31 +173,33 @@ START:
         }
     }
 
+    ofstream write_file;
+    write_file.open(filename.substr(0, filename.size() - 2) + ".o");
+
     int text_section_size = count;
     int data_section_size = data_seg.size();
 
-    cout << "0x" << hex << text_section_size * 4 << endl;
-    cout << "0x" << hex << data_section_size * 4 << endl;
+    write_file << "0x" << hex << text_section_size * 4 << endl;
+    write_file << "0x" << hex << data_section_size * 4 << endl;
     for (int i = 0; i < int(text_seg.size()); i++) {
         if (is_instruction(text_seg[i])) {
-            instructions(text_seg[i], new_label_map, counter);
+            instructions(text_seg[i], new_label_map, counter, write_file);
         }
     }
     
     // data_seg 출력
     for (size_t i = 0;i < data_seg.size();i++) {
         if (data_seg[i].substr(0, 2) == "0x") {
-            cout << data_seg[i] << endl;
+            write_file << data_seg[i] << endl;
             continue;
         }
-        cout << "0x" <<  data_seg[i] << endl;
+        write_file << "0x" <<  data_seg[i] << endl;
     }
 
-    file.close();
     return 0;
 }
 
-void instructions(const string& inst, map<string, int> new_label_map, int counter = 0) {
+void instructions(const string& inst, map<string, int> new_label_map, int counter, ofstream& write_file) {
     const string* ptr = &inst;
     // cout << *(ptr)<< endl;
     int rd;
@@ -214,6 +215,7 @@ void instructions(const string& inst, map<string, int> new_label_map, int counte
     string address;
     int text_address;
     int data_address;
+    counter = 0;
 
     if (inst == "and") {
         rd = stoi(*(ptr + 1));
@@ -382,6 +384,6 @@ void instructions(const string& inst, map<string, int> new_label_map, int counte
         result = (5 << 26) + (rs << 21) + (rt << 16) + offset;
     }
 
-    cout << "0x" << hex << result << endl;
+    write_file << "0x" << hex << result << endl;
     counter++;
 }
