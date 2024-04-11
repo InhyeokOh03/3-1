@@ -1,47 +1,42 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-void print_bit(void *a, int len) {
-    int i, j;
+typedef unsigned char* pointer;
+
+void print_bit(pointer a, int len) {
     unsigned char *ptr = (unsigned char *)a;
+    int i, j;
     
-    for (i = len - 1; i >= 0; i--) {
+    for (i = 0; i < len; i++) {
         for (j = 7; j >= 0; j--) {
             printf("%d", (ptr[i] >> j) & 1);
         }
         printf(" ");
     }
+    printf("\n");
 }
 
-void reverse_bit(void *a, int len) {
-    unsigned char *ptr = (unsigned char *)a;
-    int i, j;
-    
-    for (i = 0; i < len; i++) {
+void reverse_bit(unsigned char *a, int len) {
+    // 바이트의 비트 순서 뒤집기
+    for (int i = 0; i < len; ++i) {
         unsigned char temp = 0;
-        for (j = 0; j < 8; j++) {
-            temp |= ((ptr[i] >> j) & 1) << (7 - j);
+        for (int j = 0; j < 8; ++j) {
+            temp |= ((a[i] >> j) & 1) << (7 - j);
         }
-        ptr[i] = temp;
+        a[i] = temp;
+    }
+
+    // 바이트 배열 순서 뒤집기
+    for (int i = 0; i < len / 2; ++i) {
+        unsigned char temp = a[i];
+        a[i] = a[len - i - 1];
+        a[len - i - 1] = temp;
     }
 }
 
-void split_bit(void *a, void *out1, void *out2, int len) {
-    unsigned char *ptr_a = (unsigned char *)a;
-    unsigned char *ptr_out1 = (unsigned char *)out1;
-    unsigned char *ptr_out2 = (unsigned char *)out2;
-    int i, j;
-
-    for (i = 0; i < len; i++) {
-        ptr_out1[i] = 0;
-        ptr_out2[i] = 0;
-        for (j = 0; j < 8; j++) {
-            if (j % 2 == 0) {
-                ptr_out2[i] |= (ptr_a[i] >> j) & 1;
-            } else {
-                ptr_out1[i] |= (ptr_a[i] >> j) & 1;
-            }
-        }
-    }
+void split_bit(unsigned char *a, unsigned char *out1, unsigned char *out2, int len) {
+    *out1 = (unsigned char*)((*a & 0x55555555) >> 1);
+    *out2 = (unsigned char*)(*a & 0xAAAAAAAA);
 }
 
 unsigned int convert_endian(unsigned int a) {
@@ -74,6 +69,7 @@ int main() {
     split_bit((pointer)&v2, (pointer)&out1, (pointer)&out2, sizeof(v2));
     print_bit((pointer)&out1, sizeof(out1));
     print_bit((pointer)&out2, sizeof(out2));
+    exit(0);
     printf("Problem 3\n");
     unsigned int v3 = 0x12345678;
     unsigned int v3_ret = convert_endian(v3);
