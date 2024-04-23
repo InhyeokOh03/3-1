@@ -4,32 +4,22 @@
 #include <iostream>
 #include <sstream>
 #include <regex>
-#include <map>
 #include <set>
 #include <cstdlib>
 
 using namespace std;
 
-int sign_extend(int value) {
-    return static_cast<int>(static_cast<int32_t>(value));
-}
-
-int instructions(unsigned int content, int Register[32], int* register_pointer, unsigned int PC, unsigned int data, unsigned int text ) {
+int instructions(unsigned int content, int Register[32], int* register_pointer, unsigned int PC, unsigned int data, unsigned int text, unsigned int* data_arr_ptr) {
     unsigned int op;
     op = content >> 26;
-    // cout << op << endl;
+
     if (op == 0) {
         unsigned int rs = ((content << 6) & 0xf8000000) >> 27;
         unsigned int rt = ((content << 11) & 0xf8000000) >> 27;
         unsigned int rd = ((content << 16) & 0xf8000000) >> 27;
         unsigned int shamt = ((content << 21) & 0xf8000000) >> 27;
         unsigned int funct = ((content << 26) & 0xfc000000) >> 26;
-        // cout << op << endl;
-        // cout << "->" << rs << endl;
-        // cout << "-->" << rt << endl;
-        // cout << "--->" << rd << endl;
-        // cout << "---->" << shamt << endl;
-        // cout << "----->" << funct << endl;
+
         if (funct == 33) {
             Register[rd] = Register[rs] + Register[rt];
             PC += 4;
@@ -111,7 +101,6 @@ int instructions(unsigned int content, int Register[32], int* register_pointer, 
             Register[rt] = Register[rs + imm];
             PC += 4;
         } else if (op == 13) {
-            // cout << imm << endl;
             Register[rt] = Register[rs] | imm;
             PC += 4;
         } else if (op == 11) {
@@ -122,18 +111,44 @@ int instructions(unsigned int content, int Register[32], int* register_pointer, 
             }
             PC += 4;
         } else if (op == 43) {
-            Register[rs + imm] = Register[rt];
+            // Register[rs + imm] = Register[rt];
+            // unsigned int temp = Register[rt] & 0xffff;
+            // if (imm % 4 == 0) {
+            //     *(data_arr_ptr + (imm % 4)) = (*(data_arr_ptr + (imm % 4)) & 0x00ffffff) | (temp << 24);
+            // } else if (imm % 4 == 1) {
+            //     // *(data_ptr + (imm % 4)) = (*(data_ptr + (imm % 4)) & 0x00ffffff) | (temp << 24);
+            // } else if (imm % 4 == 2) {
+            //     Register[rs + (imm / 4)] &= 0xffff0000;
+            //     Register[rs + (imm / 4)] = temp >> 16;
+            //     Register[rs + (imm / 4) + 1] &= 0x0000ffff; 
+            //     Register[rs + (imm / 4) + 1] = temp << 16;
+            // } else if (imm % 4 == 3) {
+            //     Register[rs + (imm / 4)] &= 0xffffff00;
+            //     Register[rs + (imm / 4)] = temp >> 24;
+            //     Register[rs + (imm / 4) + 1] &= 0x000000ff; 
+            //     Register[rs + (imm / 4) + 1] = temp << 8;          
+            // }
             PC += 4;
         } else if (op == 32) {
             Register[rt] = Register[rs + imm] & 0xff;
             PC += 4;
         } else if (op == 40) {
-            Register[rs + imm] = Register[rt] & 0xff;
+            int addr = rs + imm;
+            int index = (addr - data) / 4;
+            unsigned int temp = Register[rt] & 0xff;
+            cout << addr << ", " << index << endl;
+            if (addr % 4 == 0) {
+                *(data_arr_ptr + index) = (*(data_arr_ptr + index) & 0x00ffffff) | (temp << 24);
+            } else if (addr % 4 == 1) {
+                *(data_arr_ptr + index) = (*(data_arr_ptr + index) & 0xff00ffff) | (temp << 16);
+            } else if (addr % 4 == 2) {
+                *(data_arr_ptr + index) = (*(data_arr_ptr + index) & 0xffff00ff) | (temp << 8);
+            } else if (addr % 4 == 3) {
+                *(data_arr_ptr + index) = (*(data_arr_ptr + index) & 0xffffff00) | temp;        
+            }
             PC += 4;
         }
     }
-
-
 
     return PC;
 }
@@ -142,7 +157,7 @@ int main(int argc, char* argv[]) {
 
     string filename = argv[argc - 1];
     string filepath = "assembly_codes/" + filename;
-    int n;
+    int n = 2147483647;
     string m;
     string d;
 
@@ -175,11 +190,6 @@ int main(int argc, char* argv[]) {
     }
     file.close();
 
-    // // contents 배열 출력해보기
-    // for (const auto& str : contents) {
-    //     cout << str << endl;
-    // }
-
     int text_count;
     int data_count;
 
@@ -190,33 +200,31 @@ int main(int argc, char* argv[]) {
         n = text_count;
     }
 
-    unsigned int text_arr[text_count];
-    unsigned int data_arr[data_count];
+    // 주어진 배열 크기 계산
+    unsigned int text_arr_size = (data - text) / 4;
+    unsigned int data_arr_size = (0x7ffffffc - data) / 4;
+
+    // 동적 할당을 위한 포인터 선언
+    unsigned int* text_arr_ptr = new unsigned int[text_arr_size];
+    unsigned int* data_arr_ptr = new unsigned int[data_arr_size];
+
+    // 모든 값을 0으로 초기화
+    memset(text_arr_ptr, 0, text_arr_size * sizeof(unsigned int));
+    memset(data_arr_ptr, 0, data_arr_size * sizeof(unsigned int));
 
     for (int i = 0; i < data_count; i++) {
-        data_arr[i] = stoul(contents[2 + text_count + i], nullptr, 16);
+        *(data_arr_ptr + i) = stoul(contents[2 + text_count + i], nullptr, 16);
     }
 
     for (int i = 0; i < text_count; i++) {
-        text_arr[i] = stoul(contents[2 + i], nullptr, 16);
+        *(text_arr_ptr + i) = stoul(contents[2 + i], nullptr, 16);
     }
-
-    // // text_arr와 data_arr에 복사된 데이터 출력
-    // cout << "text_arr에 복사된 데이터:" << endl;
-    // for (int i = 0; i < text_count; i++) {
-    //     cout << text_arr[i] << " ";
-    // }
-    // cout << endl;
-    // cout << "data_arr에 복사된 데이터:" << endl;
-    // for (int i = 0; i < data_count; i++) {
-    //     cout << data_arr[i] << " ";
-    // }
-    // cout << endl;
 
     unsigned int content;
     for (int i = 0; i < n; i++) {
-        content = text_arr[i];
-        PC = instructions(content, Register, register_pointer, PC, data, text);
+        content = *(text_arr_ptr + i);
+        cout << i << endl;
+        PC = instructions(content, Register, register_pointer, PC, data, text, data_arr_ptr);
         // cout << PC << endl;
     }
 
@@ -225,6 +233,23 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < 32; i++) {
         cout << "R" << dec << i << ": 0x" << hex << Register[i] << endl;
     }
+    if (!m.empty()) {
+        size_t colon_pos = m.find(':');
 
-    return 0;
+        string address1_str = m.substr(0, colon_pos);
+        string address2_str = m.substr(colon_pos + 1);
+
+        int address1 = stoul(address1_str, nullptr, 16);
+        int address2 = stoul(address2_str, nullptr, 16);
+
+        int count = (address2 - address1) / 4;
+        // cout << dec << count << endl;
+        // if (address1 < 268435456) {
+
+        // }
+    }
+
+    delete[] data_arr_ptr;
+    delete[] text_arr_ptr;
+    return 0;   
 }
