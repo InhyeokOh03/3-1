@@ -185,7 +185,6 @@ int main(int argc, char* argv[]) {
         ++i;
         } else if (strcmp(argv[i], "-d") == 0 && i + 1 < argc) {
             d = true;
-            ++i;
         }
     }
 
@@ -241,7 +240,9 @@ int main(int argc, char* argv[]) {
 
     while (PC < text + text_count * 4) {
         // cout << "PC :0x" << hex << PC << ", until :0x" << hex << text + text_count * 4 << endl;
+        cout << "n / counter : " << n << "/" << counter << endl;
         if (counter == n && n < 2147483647) {
+            cout << "boom!!" << endl;
             break;
         }
         int index;
