@@ -35,8 +35,11 @@ void reverse_bit(unsigned char *a, int len) {
 }
 
 void split_bit(unsigned char *a, unsigned char *out1, unsigned char *out2, int len) {
-    *out1 = (unsigned char*)((*a & 0x55555555) >> 1);
-    *out2 = (unsigned char*)(*a & 0xAAAAAAAA);
+    unsigned char* temp_a = a;
+    unsigned char* temp1;
+    unsigned char* temp2;
+    printf("%d\n", *temp_a);
+
 }
 
 unsigned int convert_endian(unsigned int a) {
